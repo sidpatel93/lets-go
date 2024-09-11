@@ -48,3 +48,7 @@ func snippetCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Write([]byte("Create a new snippet..."))
 }
+
+func static(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "./ui/static"+r.URL.Path)
+}

@@ -5,9 +5,16 @@ import (
 )
 func main() {
 	mux := http.NewServeMux()
+	staticfileServer := http.FileServer(http.Dir("./ui/static/"))
+
+	// Staitc file server route
+	mux.Handle("/static/", http.StripPrefix("/static", staticfileServer))
+
+	// other application routes
 	mux.HandleFunc("/", home)
 	mux.HandleFunc("/snippet/view", snippetView)
 	mux.HandleFunc("/snippet/create", snippetCreate)
+	
 	log.Print("Starting server on :4000")
 	err := http.ListenAndServe(":4000", mux)
 	log.Fatal(err)
