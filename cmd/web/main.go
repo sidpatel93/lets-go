@@ -35,22 +35,11 @@ func main() {
 		infoLog: infoLog,
 	}
 
-	mux := http.NewServeMux()
-	staticfileServer := http.FileServer(http.Dir(config.staticDir))
-
-	// Staitc file server route
-	mux.Handle("/static/", http.StripPrefix("/static", staticfileServer))
-
-	// other application routes
-	mux.HandleFunc("/", app.home)
-	mux.HandleFunc("/snippet/view", app.snippetView)
-	mux.HandleFunc("/snippet/create", app.snippetCreate)
-
 	// Configure the http.Server instance
 	srv := http.Server{
 		Addr: config.addr,
 		ErrorLog: errorLog,
-		Handler: mux,
+		Handler: app.routes(),
 	}
 
 	infoLog.Printf("Starting server on %s", config.addr)
