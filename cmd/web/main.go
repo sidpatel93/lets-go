@@ -7,9 +7,10 @@ import (
 	"os"
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
+	"snippetbox.sidpatel.net/internal/models"
 )
 
-type config struct {
+type Config struct {
 	addr string
 	dsn string
 	staticDir string
@@ -18,11 +19,12 @@ type config struct {
 type application struct {
 	errorLog *log.Logger
 	infoLog *log.Logger
+	snippets *models.SnippetModel
 }
 
 func main() {
 	// a new config struct
-	var config config
+	var config Config
 	// define and parse command line flags to get the runtime values
 	flag.StringVar(&config.addr, "addr", ":4000", "HTTP network address")
 	flag.StringVar(&config.dsn, "dsn", "web:password@(localhost:3306)/snippetbox?parseTime=true", "MySQL DB connection string")
@@ -43,13 +45,14 @@ func main() {
 	defer db.Close()
 
 	// a new application struct that contains the dependencies shared by the handlers and other files.
-	app := application {
+	app := &application {
 		errorLog: errorLog,
 		infoLog: infoLog,
+		snippets: &models.SnippetModel{DB: db},
 	}
 
 	// Configure the http.Server instance
-	srv := http.Server{
+	srv := &http.Server{
 		Addr: config.addr,
 		ErrorLog: errorLog,
 		Handler: app.routes(),
