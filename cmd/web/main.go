@@ -25,7 +25,7 @@ func main() {
 	var config config
 	// define and parse command line flags to get the runtime values
 	flag.StringVar(&config.addr, "addr", ":4000", "HTTP network address")
-	flag.StringVar(&config.dsn, "dsn", "root:@/snippetbox?parseTime=true", "MySQL DB connection string")
+	flag.StringVar(&config.dsn, "dsn", "web:password@(localhost:3306)/snippetbox?parseTime=true", "MySQL DB connection string")
 	flag.StringVar(&config.staticDir, "static-dir", "./ui/static", "Path to static assets")
 	flag.Parse()
 
