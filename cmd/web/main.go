@@ -1,21 +1,75 @@
 package main
+
 import (
+	"flag"
 	"log"
 	"net/http"
+	"os"
+	"database/sql"
+	_ "github.com/go-sql-driver/mysql"
+	"snippetbox.sidpatel.net/internal/models"
 )
+
+type Config struct {
+	addr string
+	dsn string
+	staticDir string
+}
+
+type application struct {
+	errorLog *log.Logger
+	infoLog *log.Logger
+	snippets *models.SnippetModel
+}
+
 func main() {
-	mux := http.NewServeMux()
-	staticfileServer := http.FileServer(http.Dir("./ui/static/"))
+	// a new config struct
+	var config Config
+	// define and parse command line flags to get the runtime values
+	flag.StringVar(&config.addr, "addr", ":4000", "HTTP network address")
+	flag.StringVar(&config.dsn, "dsn", "web:password@(localhost:3306)/snippetbox?parseTime=true", "MySQL DB connection string")
+	flag.StringVar(&config.staticDir, "static-dir", "./ui/static", "Path to static assets")
+	flag.Parse()
 
-	// Staitc file server route
-	mux.Handle("/static/", http.StripPrefix("/static", staticfileServer))
+	// custom loggers
+	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
+	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
-	// other application routes
-	mux.HandleFunc("/", home)
-	mux.HandleFunc("/snippet/view", snippetView)
-	mux.HandleFunc("/snippet/create", snippetCreate)
-	
-	log.Print("Starting server on :4000")
-	err := http.ListenAndServe(":4000", mux)
-	log.Fatal(err)
+	// create a connection pool
+	db, err := openDB(config.dsn)
+	if err != nil {
+		errorLog.Fatal(err)
+	}
+
+	// defer the close of the db connection
+	defer db.Close()
+
+	// a new application struct that contains the dependencies shared by the handlers and other files.
+	app := &application {
+		errorLog: errorLog,
+		infoLog: infoLog,
+		snippets: &models.SnippetModel{DB: db},
+	}
+
+	// Configure the http.Server instance
+	srv := &http.Server{
+		Addr: config.addr,
+		ErrorLog: errorLog,
+		Handler: app.routes(),
+	}
+
+	infoLog.Printf("Starting server on %s", config.addr)
+	err = srv.ListenAndServe()
+	errorLog.Fatal(err)
+}
+
+func openDB(dsn string) (*sql.DB, error) {
+	db, err := sql.Open("mysql", dsn)
+	if err != nil {
+		return nil, err
+	}
+	if err = db.Ping(); err != nil {
+		return nil, err
+	}
+	return db, nil
 }
