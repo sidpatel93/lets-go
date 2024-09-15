@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"html/template"
+	// "html/template"
 	"net/http"
 	"strconv"
 	"errors"
@@ -14,20 +14,28 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		app.notFound(w)
 		return
 	}
-	files := []string{
-		"./ui/html/base.html",
-		"./ui/html/partials/navbar.html",
-		"./ui/html/pages/home.html",
-		}
-	ts, err := template.ParseFiles(files...)
+	snippets, err := app.snippets.Latest()
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
-	err = ts.ExecuteTemplate(w, "base",nil)
-	if err != nil {
-		app.serverError(w, err)
+	for _, snippet := range snippets { 
+		fmt.Fprintf(w, "%+v\n", snippet)
 	}
+	// files := []string{
+	// 	"./ui/html/base.html",
+	// 	"./ui/html/partials/navbar.html",
+	// 	"./ui/html/pages/home.html",
+	// 	}
+	// ts, err := template.ParseFiles(files...)
+	// if err != nil {
+	// 	app.serverError(w, err)
+	// 	return
+	// }
+	// err = ts.ExecuteTemplate(w, "base",nil)
+	// if err != nil {
+	// 	app.serverError(w, err)
+	// }
 }
 
 func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {

@@ -3,7 +3,6 @@ package models
 import (
 	"database/sql"
 	"errors"
-	"log"
 	"time"
 )
 
@@ -54,5 +53,24 @@ WHERE expires > UTC_TIMESTAMP() AND id = ?`
 
 // This will return the 10 most recently created snippets.
 func (m *SnippetModel) Latest() ([]*Snippet, error) {
-	return nil, nil
+	stmt := `SELECT id, title, content, created, expires FROM snippets 
+					WHERE expires > UTC_TIMESTAMP() ORDER BY created DESC LIMIT 10` 
+	rows, err := m.DB.Query(stmt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	snippets := []*Snippet{}
+	for rows.Next() {
+		s := &Snippet{}
+		err = rows.Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
+		if err != nil {
+			return nil, err
+		}
+		snippets = append(snippets, s)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return snippets, nil
 }
